@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for
 from pymongo import MongoClient
-from dotenv import load_dotenv
 from bson.objectid import ObjectId
+from dotenv import load_dotenv
 import os
 
-load_dotenv(dotenv_path=".env", override=True)
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -19,8 +19,17 @@ brands = db["brands"]
 
 @app.route("/")
 def home():
-    all_brands = list(brands.find().sort("_id", -1))
-    return render_template("brand.html", all_brands=all_brands)
+    brand_list = list(brands.find().sort("brand_name", 1))
+    return render_template("brand.html", brands=brand_list)
+
+
+@app.route("/test-db")
+def test_db():
+    try:
+        client.admin.command("ping")
+        return "MongoDB connected successfully!"
+    except Exception as e:
+        return f"MongoDB connection failed: {e}", 500
 
 
 @app.route("/save-brand", methods=["POST"])
@@ -34,9 +43,13 @@ def save_brand():
     }
 
     if not brand_data["brand_name"]:
-        return "Brand name is required!", 400
+        return "Brand name is required.", 400
 
-    brands.insert_one(brand_data)
+    brands.update_one(
+        {"brand_name": brand_data["brand_name"]},
+        {"$set": brand_data},
+        upsert=True
+    )
 
     return redirect(url_for("home"))
 
@@ -46,15 +59,15 @@ def edit_brand(brand_id):
     try:
         object_id = ObjectId(brand_id)
     except Exception:
-        return "Invalid brand ID", 400
+        return "Invalid brand ID.", 400
 
     brand = brands.find_one({"_id": object_id})
 
     if brand is None:
-        return "Brand not found", 404
+        return "Brand profile not found.", 404
 
     if request.method == "POST":
-        updated_data = {
+        brand_data = {
             "brand_name": request.form.get("brand_name", "").strip(),
             "website": request.form.get("website", "").strip(),
             "logo_url": request.form.get("logo_url", "").strip(),
@@ -62,12 +75,12 @@ def edit_brand(brand_id):
             "mobile_apps": request.form.get("mobile_apps", "").strip()
         }
 
-        if not updated_data["brand_name"]:
-            return "Brand name is required!", 400
+        if not brand_data["brand_name"]:
+            return "Brand name is required.", 400
 
         brands.update_one(
             {"_id": object_id},
-            {"$set": updated_data}
+            {"$set": brand_data}
         )
 
         return redirect(url_for("home"))
@@ -78,16 +91,10 @@ def edit_brand(brand_id):
 @app.route("/delete-brand/<brand_id>", methods=["POST"])
 def delete_brand(brand_id):
     try:
-        object_id = ObjectId(brand_id)
-    except Exception:
-        return "Invalid brand ID", 400
-
-    result = brands.delete_one({"_id": object_id})
-
-    if result.deleted_count == 0:
-        return "Brand not found", 404
-
-    return redirect(url_for("home"))
+        brands.delete_one({"_id": ObjectId(brand_id)})
+        return redirect(url_for("home"))
+    except Exception as e:
+        return f"Unable to delete brand: {e}", 400
 
 
 if __name__ == "__main__":
