@@ -3,15 +3,228 @@ import pandas as pd
 from urllib.parse import urlparse
 from datetime import datetime
 import os
+from detector import detect_lookalike, scan_candidates
+from brand_database import create_database, add_brand, get_all_brands
 
 st.set_page_config(
     page_title="Social Media Risk Monitor",
     page_icon="🛡️",
     layout="wide"
 )
+st.title("🛡️ Digital Risk Protection Platform")
+st.caption("Monitor social media, detect brand impersonation, and manage brand records.")
 
-st.title("🛡️ Social Media Monitoring")
-st.write("Digital Risk Protection Platform")
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📱 Social Media",
+    "🔍 Brand Detection",
+    "🏢 Brand Database",
+    "🌐 Website Proxy",
+    "📱 App Store Monitor"
+])
+with tab2:
+    st.header("🔍 Brand Impersonation Detection")
+    st.write("Check whether a name looks similar to your official brand.")
+
+    brand_name = st.text_input(
+        "Official Brand Name",
+        key="brand_detect_name"
+    )
+
+    candidates_text = st.text_area(
+        "Enter names to check (one per line)",
+        key="brand_detect_candidates"
+    )
+
+    if st.button("Scan Brand Names"):
+        if not brand_name.strip() or not candidates_text.strip():
+            st.warning("Enter the brand name and candidate names.")
+        else:
+            from detector import scan_candidates
+
+            candidates = [
+                name.strip()
+                for name in candidates_text.splitlines()
+                if name.strip()
+            ]
+
+            results = scan_candidates(brand_name.strip(), candidates)
+
+            for result in results:
+                st.write("---")
+                st.write("Candidate:", result["candidate"])
+                st.write("Risk Score:", result["risk_score"], "/100")
+                st.write("Severity:", result["severity"])
+                st.write("Reasons:", ", ".join(result["reasons"]))
+with tab3:
+    st.header("🏢 Official Brand Database")
+
+    from brand_database import create_database, add_brand, get_all_brands
+
+    create_database()
+
+    brand_name = st.text_input("Brand Name", key="db_brand")
+    website = st.text_input("Official Website", key="db_website")
+    keywords = st.text_input("Keywords (comma separated)", key="db_keywords")
+
+    if st.button("Add Brand"):
+        if brand_name.strip() and website.strip():
+            add_brand(brand_name.strip(), website.strip(), keywords.strip())
+            st.success("Brand saved successfully!")
+        else:
+            st.warning("Enter the brand name and official website.")
+
+    st.subheader("Saved Brands")
+    brands = get_all_brands()
+
+    if brands:
+        st.dataframe(
+            [
+                {
+                    "Brand": b[1],
+                    "Official Website": b[2],
+                    "Keywords": b[3]
+                }
+                for b in brands
+            ],
+            use_container_width=True
+        )
+    else:
+        st.info("No brands saved yet.")
+with tab4:
+    st.header("🌐 AI Website & Brand Risk Analysis")
+
+    from website_analyzer import TASKS, fetch_website, analyze_with_genai
+
+    task = st.selectbox(
+        "Select detection task",
+        list(TASKS.keys()),
+        key="proxy_task"
+    )
+
+    brand_name = st.text_input(
+        "Brand or Company Name",
+        key="proxy_brand"
+    )
+
+    official_url = st.text_input(
+        "Official Website (optional)",
+        key="proxy_official"
+    )
+
+    suspicious_url = st.text_input(
+        "Suspicious Website or Profile URL (optional)",
+        key="proxy_suspicious"
+    )
+
+    brand_details = st.text_area(
+        "Known Official Brand Details",
+        key="proxy_details"
+    )
+
+    supporting_evidence = st.text_area(
+        "Supporting Evidence",
+        key="proxy_evidence"
+    )
+
+    if st.button("Analyze Asset", key="proxy_analyze"):
+        if not brand_name.strip():
+            st.warning("Enter the brand name.")
+        elif not suspicious_url.strip() and not supporting_evidence.strip():
+            st.warning("Enter a suspicious URL or supporting evidence.")
+        else:
+            try:
+                page_evidence = {}
+
+                if suspicious_url.strip():
+                    page_evidence["suspicious_asset"] = fetch_website(
+                        suspicious_url
+                    )
+
+                if official_url.strip():
+                    page_evidence["official_reference"] = fetch_website(
+                        official_url
+                    )
+
+                with st.spinner("AI is analyzing the evidence..."):
+                    result = analyze_with_genai(
+                        task=task,
+                        brand_name=brand_name,
+                        official_url=official_url,
+                        suspicious_url=suspicious_url,
+                        brand_details=brand_details,
+                        supporting_evidence=supporting_evidence,
+                        page_evidence=page_evidence
+                    )
+
+                st.subheader("Assessment Results")
+                st.write("**Classification:**", result["classification"])
+                st.write("**Confidence:**", result.get("confidence", "Unknown"))
+
+                for section in [
+                    "reasons",
+                    "warning_signs",
+                    "missing_evidence",
+                    "recommended_actions"
+                ]:
+                    st.markdown("### " + section.replace("_", " ").title())
+                    for item in result.get(section, []):
+                        st.write("- " + item)
+
+                st.markdown("### Limitations")
+                st.write(result.get("limitations", "Not specified."))
+
+                st.download_button(
+                    "Download Assessment JSON",
+                    data=__import__("json").dumps(
+                        result, indent=2, ensure_ascii=False
+                    ),
+                    file_name="brand_risk_assessment.json",
+                    mime="application/json"
+                )
+
+            except Exception as exc:
+                st.error(f"Analysis failed: {exc}")
+with tab5:
+    import json
+    import streamlit as st
+    from app_store_monitor import analyze_app
+
+    st.header("📲 App Store Risk Detection")
+    st.caption("Rule-based screening of app details. Not a live store scan.")
+
+    app_name = st.text_input("App Name", key="store_app_name")
+    developer = st.text_input("Developer Name", key="store_developer")
+    rating = st.slider("App Rating", 0.0, 5.0, 3.0, 0.5, key="store_rating")
+    description = st.text_area("App Description", key="store_description")
+
+    if st.button("Analyze App", key="store_analyze"):
+        if not app_name.strip():
+            st.warning("Please enter an app name.")
+        else:
+            result = analyze_app(
+                app_name=app_name,
+                developer=developer,
+                description=description,
+                rating=rating
+            )
+
+            st.subheader("Assessment Result")
+            st.metric("Risk Score", f"{result['Risk Score']}/100")
+            st.write("Severity:", result["Severity"])
+            st.write("App:", result["App Name"])
+            st.write("Developer:", result["Developer"])
+
+            st.subheader("Warning Indicators")
+            for reason in result["Reasons"]:
+                st.write(f"- {reason}")
+
+            st.download_button(
+                "Download Report",
+                data=json.dumps(result, indent=2),
+                file_name="app_risk_report.json",
+                mime="application/json"
+            )
+st.header("🛡️ Social Media Monitoring")
 st.divider()
 
 HISTORY_FILE = "scan_history.csv"
@@ -21,7 +234,7 @@ st.subheader("🔍 Analyze a Social Media Profile")
 
 platform = st.selectbox(
     "Select Platform",
-    ["Instagram", "Facebook", "X", "LinkedIn", "Other"]
+    ["Instagram", "Facebook", "Twitter", "LinkedIn", "Other"]
 )
 
 brand = st.text_input("Official Brand Name")
@@ -307,4 +520,4 @@ def delete_brand(brand_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False, use_reloader=False)
