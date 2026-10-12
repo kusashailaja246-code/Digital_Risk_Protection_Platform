@@ -1,3 +1,7 @@
+__pycache__/
+*.py[cod]
+.venv/
+Data/threats.db
 # Logs
 logs
 *.log
