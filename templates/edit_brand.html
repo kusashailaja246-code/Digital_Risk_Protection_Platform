@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Brand - BrandShield</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 30px;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            color: #173b67;
+        }
+
+        label {
+            display: block;
+            margin-top: 14px;
+            font-weight: bold;
+        }
+
+        input, textarea {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 11px;
+            margin-top: 6px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+
+        button, .button {
+            display: inline-block;
+            padding: 11px 16px;
+            margin-top: 18px;
+            margin-right: 8px;
+            border: none;
+            border-radius: 6px;
+            background: #1769aa;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .cancel {
+            background: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="card">
+        <h1>Edit Brand Profile</h1>
+
+        <form action="{{ url_for('edit_brand', brand_id=brand['_id']|string) }}"
+              method="POST">
+
+            <label for="brand_name">Brand Name *</label>
+            <input id="brand_name" type="text" name="brand_name"
+                   value="{{ brand.get('brand_name', '') }}" required>
+
+            <label for="website">Website</label>
+            <input id="website" type="text" name="website"
+                   value="{{ brand.get('website', '') }}">
+
+            <label for="logo_url">Logo URL</label>
+            <input id="logo_url" type="text" name="logo_url"
+                   value="{{ brand.get('logo_url', '') }}">
+
+            <label for="social_accounts">Social Accounts</label>
+            <textarea id="social_accounts" name="social_accounts"
+                      rows="3">{{ brand.get('social_accounts', '') }}</textarea>
+
+            <label for="mobile_apps">Mobile Apps</label>
+            <textarea id="mobile_apps" name="mobile_apps"
+                      rows="3">{{ brand.get('mobile_apps', '') }}</textarea>
+
+            <button type="submit">Update Brand</button>
+
+            <a class="button cancel" href="{{ url_for('home') }}">
+                Cancel
+            </a>
+
+        </form>
+    </div>
+
+</div>
+</body>
+</html>
