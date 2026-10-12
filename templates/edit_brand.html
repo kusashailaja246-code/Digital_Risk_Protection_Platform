@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Brand Profile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef3ff;
+            padding: 25px;
+        }
+        .container {
+            max-width: 650px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+        }
+        h1 { color: #173b70; }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px;
+            margin-top: 6px;
+            border: 1px solid #ccd3df;
+            border-radius: 6px;
+        }
+        button, .back {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 11px 18px;
+            border: none;
+            border-radius: 6px;
+            background: #245bd5;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Edit Brand Profile</h1>
+
+    <form method="POST">
+        <label>Brand Name *</label>
+        <input name="brand_name"
+               value="{{ brand.brand_name }}"
+               required>
+
+        <label>Company Website</label>
+        <input name="website" type="url"
+               value="{{ brand.website or '' }}">
+
+        <label>Official Logo URL</label>
+        <input name="logo_url" type="url"
+               value="{{ brand.logo_url or '' }}">
+
+        <label>Official Social Media Accounts</label>
+        <textarea name="social_accounts">{{ brand.social_accounts or '' }}</textarea>
+
+        <label>Official Mobile Applications</label>
+        <textarea name="mobile_apps">{{ brand.mobile_apps or '' }}</textarea>
+
+        <button type="submit">Update Brand Profile</button>
+        <a class="back" href="/">Cancel</a>
+    </form>
+</div>
+</body>
+</html>
